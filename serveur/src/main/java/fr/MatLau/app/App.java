@@ -2,8 +2,6 @@ package fr.MatLau.app;
 
 import static spark.Spark.*;
 
-import javax.servlet.http.Cookie;
-
 public class App 
 {
     public static void main( String[] args )
@@ -14,8 +12,8 @@ public class App
             //System.out.println(req.body());
             String username = req.queryParams("username");
             String password = req.queryParams("password");
-            System.out.println(username);
-            System.out.println(password);
+            //System.out.println(username);
+            //System.out.println(password);
             
             String cookie = Login.checkLogin(username, password);
             if(!cookie.equals("")) {
@@ -47,17 +45,58 @@ public class App
 
         get("/myActions", (req, res) -> {
             String cookie = req.cookie("session_cookie");
-            return DemandeDAO.getMyActions(cookie);
+            String username = DemandeDAO.usernameFromCookie(cookie);
+            if(username.equals("")) {
+                res.status(401);
+                return "Authentication Error";
+            }
+            return DemandeDAO.getMyActions(username);
         });
 
         get("/myInformations", (req, res) -> {
             String cookie = req.cookie("session_cookie");
-            return DemandeDAO.getMyInformations(cookie);
+            String username = DemandeDAO.usernameFromCookie(cookie);
+            if(username.equals("")) {
+                res.status(401);
+                return "Authentication Error";
+            }
+            return DemandeDAO.getMyInformations(username);
         });
 
         get("/myEvenements", (req, res) -> {
             String cookie = req.cookie("session_cookie");
-            return DemandeDAO.getMyEvenements(cookie);
+            String username = DemandeDAO.usernameFromCookie(cookie);
+            if(username.equals("")) {
+                res.status(401);
+                return "Authentication Error";
+            }
+            return DemandeDAO.getMyEvenements(username);
+        });
+
+        post("/createDemande", (req, res) -> {
+            String cookie = req.cookie("session_cookie");
+            String username = DemandeDAO.usernameFromCookie(cookie);
+            if(username.equals("")) {
+                res.status(401);
+                return "Authentication Error";
+            } else {
+                String titre = req.queryParams("titre");
+                String description = req.queryParams("description");
+                String typeDemande = req.queryParams("type").toLowerCase();
+                String usersList = req.queryParams("users");
+                DemandeDAO.createDemande(username, titre, description, typeDemande, usersList);
+                return "Notification créée";
+            }
+        });
+
+        get("/recent", (req, res) -> {
+            String cookie = req.cookie("session_cookie");
+            String username = DemandeDAO.usernameFromCookie(cookie);
+            if(username.equals("")) {
+                res.status(401);
+                return "Authentication Error";
+            }
+            return DemandeDAO.getRecentDemandes(username);
         });
     }
 }
