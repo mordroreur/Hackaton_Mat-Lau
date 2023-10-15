@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: AuthenticationWrapper(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -50,9 +51,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
   @override
   void initState() {
     var cron = Cron();
-    cron.schedule(Schedule.parse('*/1 * * * *'), () async {
-      print('every three minutes');
-    });
+    cron.schedule(Schedule.parse('*/1 * * * *'), () async {});
     super.initState();
     checkAuthentication();
   }
@@ -68,8 +67,6 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
 
     List<Cookie> results =
         await cookieJar.loadForRequest(Uri.parse("http://" + IP + ":8080"));
-
-    //print(results.isEmpty);
 
     setState(() {
       _isAuthenticated = !results.isEmpty;
@@ -181,7 +178,31 @@ class MainPage extends StatelessWidget {
 
   Future<bool> _getDBInfo() async {
     rep = await dio.get(
-      "http://" + IP + ":8080/getMyDemandes",
+      "http://" + IP + ":8080/myInformations",
+    );
+    //print(rep.toString());
+    return true;
+  }
+
+  Future<bool> _getDBEvent() async {
+    rep = await dio.get(
+      "http://" + IP + ":8080/myEvenements",
+    );
+    //print(rep.toString());
+    return true;
+  }
+
+  Future<bool> _getDBAction() async {
+    rep = await dio.get(
+      "http://" + IP + ":8080/myActions",
+    );
+    //print(rep.toString());
+    return true;
+  }
+
+  Future<bool> _getDBUsers() async {
+    rep = await dio.get(
+      "http://" + IP + ":8080/users",
     );
     //print(rep.toString());
     return true;
@@ -191,6 +212,7 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 174, 198, 221),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.logout_rounded),
@@ -201,7 +223,7 @@ class MainPage extends StatelessWidget {
           ),
         ],
         centerTitle: true,
-        title: const Text('Mail Drop'),
+        title: const Text('MailDrop'),
       ),
       body: Container(
         color: Colors.white, // Page blanche
@@ -214,8 +236,21 @@ class MainPage extends StatelessWidget {
                 child: IconButton(
                   iconSize: 72,
                   icon: const Icon(Icons.add_box_outlined),
-                  tooltip: 'Créer ???',
-                  onPressed: () {},
+                  tooltip: 'Créer une notification',
+                  onPressed: () async {
+                    if (await _getDBUsers()) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => CreationMenu(resp: rep)));
+                    }
+                  }, /*
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CreationMenu()));
+                  },*/
                 ),
               ),
             ]),
@@ -223,7 +258,7 @@ class MainPage extends StatelessWidget {
             const SizedBox(height: 10),
             const Center(
               child: Text(
-                "Mes Notifs",
+                "Mes Notifications",
                 style: TextStyle(fontSize: 24),
               ),
             ),
@@ -237,38 +272,38 @@ class MainPage extends StatelessWidget {
                           builder: (context) => InformationMenu(resp: rep)));
                 }
               },
-              /*
-              onPressed: () {
-                rep = _getDBInfo();
-                (Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => InformationMenu(Response: rep),
-                        ))) /*,
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => InformationMenu()),
-                )*/
-                    ;
-              },*/
               child: const Text(
-                "Informaation",
+                "Informations",
                 style: TextStyle(fontSize: 24),
               ),
             ),
             const SizedBox(height: 20),
             OutlinedButton(
-              onPressed: () {},
+              onPressed: () async {
+                if (await _getDBAction()) {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => InformationMenu(resp: rep)));
+                }
+              },
               child: const Text(
-                "Action",
+                "Actions",
                 style: TextStyle(fontSize: 24),
               ),
             ),
             const SizedBox(height: 20),
             OutlinedButton(
-              onPressed: () {},
+              onPressed: () async {
+                if (await _getDBEvent()) {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => InformationMenu(resp: rep)));
+                }
+              },
               child: const Text(
-                "Evènement",
+                "Evènements",
                 style: TextStyle(fontSize: 24),
               ),
             ),
@@ -290,10 +325,11 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 174, 198, 221),
         title: Text('Login Page'),
       ),
       body: Container(
-        color: Colors.blueGrey,
+        color: Color.fromARGB(255, 206, 214, 218),
         padding: EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -373,6 +409,15 @@ class InformationMenu extends StatelessWidget {
     for (int i = 1; i < val.length; i++) {
       allCont.add(
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: (val[i]['typeDemande'] == 'i')
+                ? Color.fromARGB(255, 158, 8, 88)
+                : (val[i]['typeDemande'] == 'e')
+                    ? Color.fromARGB(255, 216, 196, 16)
+                    : (val[i]['priorite'] == 1)
+                        ? Colors.red
+                        : const Color.fromARGB(255, 197, 197, 197),
+          ),
           onPressed: () {
             (Navigator.push(
                 context,
@@ -406,7 +451,8 @@ class InformationMenu extends StatelessWidget {
     //final todo = ModalRoute.of(context).!.settings.arguments as Response;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Informations'),
+        backgroundColor: Color.fromARGB(255, 174, 198, 221),
+        title: const Text('Notifications'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(8),
@@ -425,7 +471,8 @@ class AfficheZoom extends StatelessWidget {
     //final todo = ModalRoute.of(context).!.settings.arguments as Response;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Informations'),
+        backgroundColor: Color.fromARGB(255, 174, 198, 221),
+        title: const Text('Notification'),
       ),
       body: ListView(padding: const EdgeInsets.all(8), children: <Widget>[
         const SizedBox(height: 20),
@@ -437,10 +484,146 @@ class AfficheZoom extends StatelessWidget {
         Text(information['description'], style: TextStyle(fontSize: 15)),
         const SizedBox(height: 50),
         ElevatedButton(
-          child: Text("JSP"),
+          child: Text("Traiter"),
           onPressed: () {},
         )
       ]),
+    );
+  }
+}
+
+class CreationMenu extends StatefulWidget {
+  var resp;
+  CreationMenu({super.key, required this.resp});
+
+  @override
+  _CreationMenuState createState() => _CreationMenuState();
+}
+
+class _CreationMenuState extends State<CreationMenu> {
+  final TextEditingController titreController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  static const List<String> list = <String>[
+    'Information',
+    'evenement',
+    'action'
+  ];
+  String dropdownValue = list.first;
+
+  Map<String, bool> jsonResponse = {};
+
+/*
+  Map<String, bool> values = {
+    'foo': true,
+    'bar': false,
+  }; //List.filled(100, false, growable: true);*/
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch and decode the response when the widget is initialized
+
+    setState(() {
+      var tmp = json.decode(widget.resp.toString());
+      for (int i = 0; i < tmp.length; i++) {
+        jsonResponse[tmp[i]['username']] = false;
+      }
+    });
+  }
+
+  Future<void> _sendData(
+      String titre, String desc, String type, String users) async {
+    try {
+      Response response = await dio.post(
+        "http://" + IP + ":8080/createDemande",
+        queryParameters: {
+          'titre': '$titre',
+          'description': '$desc',
+          'type': type.toString().substring(0, 1),
+          'users': users
+        },
+      );
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 174, 198, 221),
+        title: const Text('Création de demande'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(8),
+        children: <Widget>[
+          TextField(
+            controller: titreController,
+            decoration: InputDecoration(
+              hintText: 'Enter the title',
+            ),
+          ),
+          TextField(
+            controller: descriptionController,
+            keyboardType: TextInputType.multiline,
+            maxLines: null,
+            decoration: InputDecoration(
+              hintText: 'Enter the description',
+            ),
+          ),
+          DropdownButton<String>(
+            value: dropdownValue,
+            icon: const Icon(Icons.arrow_downward),
+            elevation: 16,
+            style: const TextStyle(color: Colors.deepPurple),
+            underline: Container(
+              height: 2,
+              color: Colors.deepPurpleAccent,
+            ),
+            onChanged: (String? value) {
+              // This is called when the user selects an item.
+              setState(() {
+                dropdownValue = value!;
+              });
+            },
+            items: list.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ), //widget.resp.toString()
+          ListView(
+            scrollDirection: Axis.vertical,
+            shrinkWrap: true,
+            children: jsonResponse.keys.map((String key) {
+              return CheckboxListTile(
+                title: Text(key),
+                value: jsonResponse[key],
+                onChanged: (bool? value) {
+                  setState(() {
+                    jsonResponse[key] = value!;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          ElevatedButton(
+            child: Text("Envoyer"),
+            onPressed: () {
+              List<String> selectedUsers = jsonResponse.entries
+                  .where((entry) => entry.value)
+                  .map((entry) => entry.key)
+                  .toList();
+              _sendData(titreController.text, descriptionController.text,
+                  dropdownValue, selectedUsers.toString());
+              Navigator.pop(context);
+              //print(json.encode(selectedUsers.toString()).toString());
+            },
+          )
+        ],
+      ),
     );
   }
 }
