@@ -350,7 +350,7 @@ class LoginPage extends StatelessWidget {
             TextField(
               controller: passwordController,
               decoration: InputDecoration(
-                hintText: 'Enter your Pasword',
+                hintText: 'Enter your Password',
               ),
               obscureText: true,
               enableSuggestions: false,
